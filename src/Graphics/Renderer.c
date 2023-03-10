@@ -85,10 +85,10 @@ void Renderer2DRenderTextureColor(const IgnisTexture2D* texture, float x, float 
 {
     /* creating a mat4 that translates and scales */
     float model[16];
-    model[0] = w;		model[4] = 0.0f;	model[8] = 0.0f;	model[12] = x;
-    model[1] = 0.0f;	model[5] = h;		model[9] = 0.0f;	model[13] = y;
-    model[2] = 0.0f;	model[6] = 0.0f;	model[10] = 1.0f;	model[14] = 0.0f;
-    model[3] = 0.0f;	model[7] = 0.0f;	model[11] = 0.0f;	model[15] = 1.0f;
+    model[0] = w;       model[4] = 0.0f;    model[8] = 0.0f;    model[12] = x;
+    model[1] = 0.0f;    model[5] = h;       model[9] = 0.0f;    model[13] = y;
+    model[2] = 0.0f;    model[6] = 0.0f;    model[10] = 1.0f;   model[14] = 0.0f;
+    model[3] = 0.0f;    model[7] = 0.0f;    model[11] = 0.0f;   model[15] = 1.0f;
 
     Renderer2DRenderTextureModel(texture, model, color);
 }
@@ -104,7 +104,6 @@ void Renderer2DRenderTextureModel(const IgnisTexture2D* texture, const float* mo
 
     ignisDrawQuadElements(&render_data.quad, GL_TRIANGLES);
 }
-
 
 /* ---------------------| utility |--------------------------------------------*/
 void GenerateQuadIndices(GLuint* indices, size_t max)

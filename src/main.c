@@ -21,18 +21,14 @@ mat4 screen_projection;
 
 IgnisFont font;
 
-IgnisTexture2D tile_texture_atlas;
-IgnisTexture2D tile_textures[3];
-
 typedef struct
 {
     vec2 origin;
 
-    int32_t width;
-    int32_t height;
+    uint32_t width;
+    uint32_t height;
 
-    float tile_width;
-    float tile_height;
+    float tile_size;
 } IsoMap;
 
 typedef struct
@@ -41,16 +37,16 @@ typedef struct
 } Player;
 
 int grid[] = {
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 0, 0, 0, 0, 0, 0, 0, 0, 2,
-    2, 0, 0, 0, 0, 0, 0, 0, 0, 2,
-    2, 0, 0, 0, 0, 0, 0, 0, 0, 2,
-    2, 0, 0, 1, 0, 0, 0, 0, 0, 2,
-    2, 0, 0, 1, 0, 0, 0, 0, 0, 2,
-    2, 0, 0, 0, 0, 0, 0, 0, 0, 2,
-    2, 0, 0, 0, 0, 0, 0, 1, 0, 2,
-    2, 0, 0, 0, 0, 0, 0, 0, 0, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+    3, 1, 1, 1, 1, 1, 1, 1, 1, 3,
+    3, 1, 1, 1, 1, 1, 1, 1, 1, 3,
+    3, 1, 1, 1, 1, 1, 1, 1, 1, 3,
+    3, 1, 1, 2, 1, 1, 1, 1, 1, 3,
+    3, 1, 1, 2, 1, 1, 1, 1, 1, 3,
+    3, 1, 1, 1, 1, 1, 1, 1, 1, 3,
+    3, 1, 1, 1, 1, 1, 1, 2, 1, 3,
+    3, 1, 1, 1, 1, 1, 1, 1, 1, 3,
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3
 };
 
 
@@ -82,51 +78,50 @@ vec2 worldToScreen(const IsoMap* map, vec2 point)
     return vec2_add(cartesianToIso(point), map->origin);
 }
 
-int32_t tileClip(const IsoMap* map, float f) { return (int32_t)floorf(f / map->tile_height); }
+uint32_t tileClip(const IsoMap* map, float f) { return (uint32_t)floorf(f / map->tile_size); }
 
-vec2 getTileScreenPos(const IsoMap* map, int32_t col, int32_t row)
+vec2 getTileScreenPos(const IsoMap* map, uint32_t col, uint32_t row)
 {
     vec2 point = { col - .5f, row + .5f };
-    return worldToScreen(map, vec2_mult(point, map->tile_height));
+    return worldToScreen(map, vec2_mult(point, map->tile_size));
 }
 
-vec2 getTileScreenCenter(const IsoMap* map, int32_t col, int32_t row)
+vec2 getTileScreenCenter(const IsoMap* map, uint32_t col, uint32_t row)
 {
     vec2 point = { col + .5f, row + .5f };
-    return worldToScreen(map, vec2_mult(point, map->tile_height));
+    return worldToScreen(map, vec2_mult(point, map->tile_size));
 }
 
-void renderMap(const IsoMap* map, const IgnisTexture2D* textures, size_t tex_count)
+void renderMap(const IsoMap* map, const IgnisTexture2D* texture_atlas)
 {
     for (uint32_t i = 0; i < map->width * map->height; i++)
     {
-        if (grid[i] >= tex_count) continue;
+        uint32_t col = i % map->width;
+        uint32_t row = i / map->width;
 
-        int32_t col = i % map->width;
-        int32_t row = i / map->width;
-
-        vec2 screen_pos = getTileScreenPos(map, col, row);
-        Renderer2DRenderTexture(&tile_textures[grid[i]], screen_pos.x, screen_pos.y);
+        vec2 pos = getTileScreenPos(map, col, row);
+        float width = (float)texture_atlas->width;
+        float height = (float)texture_atlas->height;
+        Batch2DRenderTextureFrame(texture_atlas, pos.x, pos.y, width, height, grid[i]);
     }
 }
 
 void highlightTile(const IsoMap* map, vec2 world)
 {
-    int32_t col = tileClip(map, world.x);
-    int32_t row = tileClip(map, world.y);
+    uint32_t col = tileClip(map, world.x);
+    uint32_t row = tileClip(map, world.y);
 
-    IgnisColorRGBA color = IGNIS_WHITE;
-    if (col < 0 || col >= map->width || row < 0 || row >= map->height)
-        color = IGNIS_RED;
+    if (col >= map->width || row >= map->height)
+        return;
 
     // hightlight isometric version / screen
     vec2 center = getTileScreenCenter(map, col, row);
-    Primitives2DRenderRhombus(center.x, center.y, map->tile_width, map->tile_height, color);
-    Primitives2DFillCircle(center.x, center.y, 2, color);
+    Primitives2DRenderRhombus(center.x, center.y, 2 * map->tile_size, map->tile_size, IGNIS_WHITE);
+    Primitives2DFillCircle(center.x, center.y, 2, IGNIS_WHITE);
 
     // hightlight cartesian version / world
-    float tile_size = map->tile_height;
-    Primitives2DRenderRect(col * tile_size, row * tile_size, tile_size, tile_size, color);
+    float tile_size = map->tile_size;
+    Primitives2DRenderRect(col * tile_size, row * tile_size, tile_size, tile_size, IGNIS_WHITE);
     Primitives2DFillCircle(world.x, world.y, 3, IGNIS_BLUE);
 }
 
@@ -145,9 +140,12 @@ static void SetViewport(float w, float h)
     Renderer2DSetViewProjection(screen_projection.v);
     Primitives2DSetViewProjection(screen_projection.v);
     FontRendererSetProjection(screen_projection.v);
+    Batch2DSetViewProjection(screen_projection.v);
 }
 
 IsoMap map;
+IgnisTexture2D tile_texture_atlas;
+
 Player player;
 
 int OnLoad(MinimalApp* app, uint32_t w, uint32_t h)
@@ -175,6 +173,7 @@ int OnLoad(MinimalApp* app, uint32_t w, uint32_t h)
     Primitives2DInit();
     FontRendererInit();
     Renderer2DInit();
+    Batch2DInit("res/shaders/batch.vert", "res/shaders/batch.frag");
 
     SetViewport((float)w, (float)h);
 
@@ -188,17 +187,14 @@ int OnLoad(MinimalApp* app, uint32_t w, uint32_t h)
     MINIMAL_INFO("[OpenGL] GLSL Version: %s", ignisGetGLSLVersion());
     MINIMAL_INFO("[Ignis] Version:       %s", ignisGetVersionString());
 
-    ignisCreateTexture2D(&tile_textures[0], "res/tiles/grass.png", 1, 1, 0, NULL);
-    ignisCreateTexture2D(&tile_textures[1], "res/tiles/sand.png", 1, 1, 0, NULL);
-    ignisCreateTexture2D(&tile_textures[2], "res/tiles/water.png", 1, 1, 0, NULL);
+    ignisCreateTexture2D(&tile_texture_atlas, "res/tiles.png", 1, 4, 0, NULL);
 
     map.origin = (vec2){ width * 0.5f, 100.0f };
     map.width = 10;
     map.height = 10;
-    map.tile_width = 100.0f;
-    map.tile_height = 50.0f;
+    map.tile_size = 50.0f;
 
-    player.position = (vec2){ 5 * map.tile_height, 5 * map.tile_height };
+    player.position = (vec2){ 5 * map.tile_size, 5 * map.tile_size };
 
     return MINIMAL_OK;
 }
@@ -207,6 +203,7 @@ void OnDestroy(MinimalApp* app)
 {
     ignisDeleteFont(&font);
 
+    Batch2DDestroy();
     FontRendererDestroy();
     Primitives2DDestroy();
     Renderer2DDestroy();
@@ -254,7 +251,9 @@ void OnUpdate(MinimalApp* app, float deltatime)
 
     FontRendererFlush();
 
-    renderMap(&map, tile_textures, 3);
+    renderMap(&map, &tile_texture_atlas);
+
+    Batch2DFlush();
 
     Primitives2DFillCircle(map.origin.x, map.origin.y, 3, IGNIS_RED);
 

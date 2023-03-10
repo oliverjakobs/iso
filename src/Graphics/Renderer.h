@@ -1,6 +1,8 @@
 #ifndef IGNISRENDERER_H
 #define IGNISRENDERER_H
 
+#include <stdint.h>
+
 #include "Ignis/Ignis.h"
 #include "Ignis/Quad.h"
 
@@ -22,17 +24,20 @@ extern "C"
 
 #define BATCH2D_INDEX_COUNT (BATCH2D_MAX_QUADS * RENDERER_INDICES_PER_QUAD)
 #define BATCH2D_BUFFER_SIZE (BATCH2D_MAX_QUADS * RENDERER_VERTICES_PER_QUAD * BATCH2D_VERTEX_SIZE)
+#define BATCH2D_QUAD_SIZE   (RENDERER_VERTICES_PER_QUAD * BATCH2D_VERTEX_SIZE)
 
 #define BATCH2D_TEXTURES    8
 
 void Batch2DInit(const char* vert, const char* frag);
 void Batch2DDestroy();
 
-void Batch2DStart(const float* mat_view_proj);
+void Batch2DSetViewProjection(const float* mat_view_proj);
+
 void Batch2DFlush();
 
 void Batch2DRenderTexture(const IgnisTexture2D* texture, float x, float y, float w, float h);
 void Batch2DRenderTextureFrame(const IgnisTexture2D* texture, float x, float y, float w, float h, size_t frame);
+
 void Batch2DRenderTextureSrc(const IgnisTexture2D* texture, float x, float y, float w, float h, float src_x, float src_y, float src_w, float src_h);
 
 /*
