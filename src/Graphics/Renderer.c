@@ -123,7 +123,7 @@ void GenerateQuadIndices(GLuint* indices, size_t max)
     }
 }
 
-void GetTexture2DSrcRect(const IgnisTexture2D* texture, size_t frame, float* x, float* y, float* w, float* h)
+void GetTexture2DSrcRect(const IgnisTexture2D* texture, uint32_t frame, float* x, float* y, float* w, float* h)
 {
     *w = 1.0f / texture->cols;
     *h = 1.0f / texture->rows;

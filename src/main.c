@@ -2,7 +2,8 @@
 
 #include "Minimal/Application.h"
 #include "Graphics/Renderer.h"
-#include "math/math.h"
+
+#include "iso.h"
 
 static void IgnisErrorCallback(ignisErrorLevel level, const char* desc)
 {
@@ -21,22 +22,7 @@ mat4 screen_projection;
 
 IgnisFont font;
 
-typedef struct
-{
-    vec2 origin;
-
-    uint32_t width;
-    uint32_t height;
-
-    float tile_size;
-} IsoMap;
-
-typedef struct
-{
-    vec2 position;
-} Player;
-
-int grid[] = {
+uint32_t grid[] = {
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
     3, 1, 1, 1, 1, 1, 1, 1, 1, 3,
     3, 1, 1, 1, 1, 1, 1, 1, 1, 3,
@@ -50,80 +36,12 @@ int grid[] = {
 };
 
 
-vec2 isoToCartesian(vec2 iso)
+typedef struct
 {
-    vec2 point = {
-        (2 * iso.y + iso.x) * .5f,
-        (2 * iso.y - iso.x) * .5f
-    };
-    return point;
-}
+    vec2 position;
+    float speed;
+} Player;
 
-vec2 cartesianToIso(vec2 cartesian)
-{
-    vec2 iso = {
-        cartesian.x - cartesian.y,
-        (cartesian.x + cartesian.y) * .5f
-    };
-    return iso;
-}
-
-vec2 screenToWorld(const IsoMap* map, vec2 point)
-{
-    return isoToCartesian(vec2_sub(point, map->origin));
-}
-
-vec2 worldToScreen(const IsoMap* map, vec2 point)
-{
-    return vec2_add(cartesianToIso(point), map->origin);
-}
-
-uint32_t tileClip(const IsoMap* map, float f) { return (uint32_t)floorf(f / map->tile_size); }
-
-vec2 getTileScreenPos(const IsoMap* map, uint32_t col, uint32_t row)
-{
-    vec2 point = { col - .5f, row + .5f };
-    return worldToScreen(map, vec2_mult(point, map->tile_size));
-}
-
-vec2 getTileScreenCenter(const IsoMap* map, uint32_t col, uint32_t row)
-{
-    vec2 point = { col + .5f, row + .5f };
-    return worldToScreen(map, vec2_mult(point, map->tile_size));
-}
-
-void renderMap(const IsoMap* map, const IgnisTexture2D* texture_atlas)
-{
-    for (uint32_t i = 0; i < map->width * map->height; i++)
-    {
-        uint32_t col = i % map->width;
-        uint32_t row = i / map->width;
-
-        vec2 pos = getTileScreenPos(map, col, row);
-        float width = (float)texture_atlas->width;
-        float height = (float)texture_atlas->height;
-        Batch2DRenderTextureFrame(texture_atlas, pos.x, pos.y, width, height, grid[i]);
-    }
-}
-
-void highlightTile(const IsoMap* map, vec2 world)
-{
-    uint32_t col = tileClip(map, world.x);
-    uint32_t row = tileClip(map, world.y);
-
-    if (col >= map->width || row >= map->height)
-        return;
-
-    // hightlight isometric version / screen
-    vec2 center = getTileScreenCenter(map, col, row);
-    Primitives2DRenderRhombus(center.x, center.y, 2 * map->tile_size, map->tile_size, IGNIS_WHITE);
-    Primitives2DFillCircle(center.x, center.y, 2, IGNIS_WHITE);
-
-    // hightlight cartesian version / world
-    float tile_size = map->tile_size;
-    Primitives2DRenderRect(col * tile_size, row * tile_size, tile_size, tile_size, IGNIS_WHITE);
-    Primitives2DFillCircle(world.x, world.y, 3, IGNIS_BLUE);
-}
 
 void renderPlayer(const IsoMap* map, const Player* player)
 {
@@ -189,12 +107,11 @@ int OnLoad(MinimalApp* app, uint32_t w, uint32_t h)
 
     ignisCreateTexture2D(&tile_texture_atlas, "res/tiles.png", 1, 4, 0, NULL);
 
-    map.origin = (vec2){ width * 0.5f, 100.0f };
-    map.width = 10;
-    map.height = 10;
-    map.tile_size = 50.0f;
+    isoMapInit(&map, grid, 10, 10, 50.0f);
+    isoMapSetOrigin(&map, (vec2) { width * 0.5f, 100.0f });
 
     player.position = (vec2){ 5 * map.tile_size, 5 * map.tile_size };
+    player.speed = 60.0f;
 
     return MINIMAL_OK;
 }
@@ -231,6 +148,14 @@ int OnEvent(MinimalApp* app, const MinimalEvent* e)
 
 void OnUpdate(MinimalApp* app, float deltatime)
 {
+    vec2 velocity;
+    velocity.x = (-MinimalKeyDown(GLFW_KEY_A) + MinimalKeyDown(GLFW_KEY_D)) * player.speed;
+    velocity.y = (-MinimalKeyDown(GLFW_KEY_W) + MinimalKeyDown(GLFW_KEY_S)) * player.speed;
+
+    velocity = vec2_normalize(isoToCartesian(velocity));
+
+    player.position = vec2_add(player.position, vec2_mult(velocity, deltatime));
+
     // clear screen
     glClear(GL_COLOR_BUFFER_BIT);
 

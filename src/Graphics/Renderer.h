@@ -36,7 +36,7 @@ void Batch2DSetViewProjection(const float* mat_view_proj);
 void Batch2DFlush();
 
 void Batch2DRenderTexture(const IgnisTexture2D* texture, float x, float y, float w, float h);
-void Batch2DRenderTextureFrame(const IgnisTexture2D* texture, float x, float y, float w, float h, size_t frame);
+void Batch2DRenderTextureFrame(const IgnisTexture2D* texture, float x, float y, float w, float h, uint32_t frame);
 
 void Batch2DRenderTextureSrc(const IgnisTexture2D* texture, float x, float y, float w, float h, float src_x, float src_y, float src_w, float src_h);
 
@@ -77,11 +77,9 @@ void FontRendererTextFieldLine(const char* fmt, ...);
  * --------------------------------------------------------------
  */
 
-#define PRIMITIVES2D_MAX_VERTICES           1024
-#define PRIMITIVES2D_VERTEX_SIZE            (2 + 4) /* 2f: position; 4f color */
-
-#define PRIMITIVES2D_LINES_BUFFER_SIZE      (PRIMITIVES2D_VERTEX_SIZE * 2 * PRIMITIVES2D_MAX_VERTICES)
-#define PRIMITIVES2D_TRIANGLES_BUFFER_SIZE  (PRIMITIVES2D_VERTEX_SIZE * 3 * PRIMITIVES2D_MAX_VERTICES)
+#define PRIMITIVES2D_MAX_VERTICES   3 * 1024
+#define PRIMITIVES2D_VERTEX_SIZE    (2 + 4) /* 2f: position; 4f color */
+#define PRIMITIVES2D_BUFFER_SIZE    (PRIMITIVES2D_VERTEX_SIZE * PRIMITIVES2D_MAX_VERTICES)
 
  /* Circle */
 #define PRIMITIVES2D_PI             3.14159265359f
@@ -127,7 +125,7 @@ void Renderer2DRenderTextureModel(const IgnisTexture2D* texture, const float* mo
  * --------------------------------------------------------------
  */
 void GenerateQuadIndices(GLuint* indices, size_t max);
-void GetTexture2DSrcRect(const IgnisTexture2D* texture, size_t frame, float* x, float* y, float* w, float* h);
+void GetTexture2DSrcRect(const IgnisTexture2D* texture, uint32_t frame, float* x, float* y, float* w, float* h);
 
 #ifdef __cplusplus
 }

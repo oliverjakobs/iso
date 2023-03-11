@@ -2,9 +2,10 @@
 
 typedef struct
 {
-    IgnisVertexArray vao;
     IgnisShader shader;
+    GLint uniform_location_view_proj;
 
+    IgnisVertexArray vao;
     float vertices[BATCH2D_BUFFER_SIZE];
     uint32_t vertex_index;
 
@@ -12,8 +13,6 @@ typedef struct
 
     GLuint texture_slots[BATCH2D_TEXTURES];
     uint32_t texture_slot_index;
-
-    GLint uniform_location_view_proj;
 } Batch2DStorage;
 
 static Batch2DStorage render_data;
@@ -89,12 +88,37 @@ void Batch2DFlush()
     render_data.texture_slot_index = 0;
 }
 
+void Batch2DPushVertex(float x, float y, float src_x, float src_y, uint32_t texture_index)
+{
+    render_data.vertices[render_data.vertex_index++] = x;
+    render_data.vertices[render_data.vertex_index++] = y;
+    render_data.vertices[render_data.vertex_index++] = 0.0f;
+
+    render_data.vertices[render_data.vertex_index++] = src_x;
+    render_data.vertices[render_data.vertex_index++] = src_y;
+
+    render_data.vertices[render_data.vertex_index++] = (float)texture_index;
+}
+
+int find_texture(GLuint name, uint32_t* index)
+{
+    for (uint32_t i = 0; i < render_data.texture_slot_index; i++)
+    {
+        if (render_data.texture_slots[i] == name)
+        {
+            *index = i;
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void Batch2DRenderTexture(const IgnisTexture2D* texture, float x, float y, float w, float h)
 {
     Batch2DRenderTextureSrc(texture, x, y, w, h, 0.0f, 0.0f, 1.0f, 1.0f);
 }
 
-void Batch2DRenderTextureFrame(const IgnisTexture2D* texture, float x, float y, float w, float h, size_t frame)
+void Batch2DRenderTextureFrame(const IgnisTexture2D* texture, float x, float y, float w, float h, uint32_t frame)
 {
     float src_x, src_y, src_w, src_h;
     GetTexture2DSrcRect(texture, frame, &src_x, &src_y, &src_w, &src_h);
@@ -107,19 +131,10 @@ void Batch2DRenderTextureSrc(const IgnisTexture2D* texture, float x, float y, fl
     if (render_data.vertex_index + BATCH2D_QUAD_SIZE >= BATCH2D_BUFFER_SIZE)
         Batch2DFlush();
 
-    float texture_index = -1.0f;
-    for (size_t i = 0; i < render_data.texture_slot_index; i++)
+    uint32_t texture_index = 0;
+    if (!find_texture(texture->name, &texture_index))
     {
-        if (render_data.texture_slots[i] == texture->name)
-        {
-            texture_index = (float)i;
-            break;
-        }
-    }
-
-    if (texture_index < 0.0f)
-    {
-        texture_index = (float)render_data.texture_slot_index;
+        texture_index = render_data.texture_slot_index;
 
         if (render_data.texture_slot_index >= BATCH2D_TEXTURES)
         {
@@ -130,45 +145,10 @@ void Batch2DRenderTextureSrc(const IgnisTexture2D* texture, float x, float y, fl
         render_data.texture_slots[render_data.texture_slot_index++] = texture->name;
     }
 
-    /* BOTTOM LEFT */
-    render_data.vertices[render_data.vertex_index++] = x;
-    render_data.vertices[render_data.vertex_index++] = y;
-    render_data.vertices[render_data.vertex_index++] = 0.0f;
-
-    render_data.vertices[render_data.vertex_index++] = src_x;
-    render_data.vertices[render_data.vertex_index++] = src_y;
-
-    render_data.vertices[render_data.vertex_index++] = texture_index;
-
-    /* BOTTOM RIGHT */
-    render_data.vertices[render_data.vertex_index++] = x + w;
-    render_data.vertices[render_data.vertex_index++] = y;
-    render_data.vertices[render_data.vertex_index++] = 0.0f;
-
-    render_data.vertices[render_data.vertex_index++] = src_x + src_w;
-    render_data.vertices[render_data.vertex_index++] = src_y;
-
-    render_data.vertices[render_data.vertex_index++] = texture_index;
-
-    /* TOP RIGHT */
-    render_data.vertices[render_data.vertex_index++] = x + w;
-    render_data.vertices[render_data.vertex_index++] = y + h;
-    render_data.vertices[render_data.vertex_index++] = 0.0f;
-
-    render_data.vertices[render_data.vertex_index++] = src_x + src_w;
-    render_data.vertices[render_data.vertex_index++] = src_y + src_h;
-
-    render_data.vertices[render_data.vertex_index++] = texture_index;
-
-    /* TOP LEFT */
-    render_data.vertices[render_data.vertex_index++] = x;
-    render_data.vertices[render_data.vertex_index++] = y + h;
-    render_data.vertices[render_data.vertex_index++] = 0.0f;
-
-    render_data.vertices[render_data.vertex_index++] = src_x;
-    render_data.vertices[render_data.vertex_index++] = src_y + src_h;
-
-    render_data.vertices[render_data.vertex_index++] = texture_index;
+    Batch2DPushVertex(x,     y,     src_x,         src_y,         texture_index);   // bottom left
+    Batch2DPushVertex(x + w, y,     src_x + src_w, src_y,         texture_index);   // bottom right
+    Batch2DPushVertex(x + w, y + h, src_x + src_w, src_y + src_h, texture_index);   // top right
+    Batch2DPushVertex(x,     y + h, src_x,         src_y + src_h, texture_index);   // top left
 
     render_data.quad_count++;
 }
