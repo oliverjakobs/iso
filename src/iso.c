@@ -1,6 +1,6 @@
 #include "iso.h"
 
-#include "Graphics/Renderer.h"
+#include <ignis/renderer/renderer.h>
 
 vec2 isoToCartesian(vec2 iso)
 {

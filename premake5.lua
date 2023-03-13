@@ -30,13 +30,14 @@ group "Packages"
 
 include "packages/glfw.lua"
 include "packages/Ignis.lua"
+include "packages/Minimal.lua"
 
 group ""
 
 project "Iso"
     kind "ConsoleApp"
-	language "C"
-	cdialect "C99"
+    language "C"
+    cdialect "C99"
     staticruntime "On"
     
     targetdir ("build/bin/" .. output_dir .. "/%{prj.name}")
@@ -56,6 +57,7 @@ project "Iso"
     {
         "GLFW",
         "Ignis",
+        "Minimal",
         "opengl32"
     }
 
@@ -64,6 +66,7 @@ project "Iso"
         "src",
         "packages/glfw/include",
         "packages/Ignis/src",
+        "packages/Minimal/src"
     }
 
     filter "system:linux"

@@ -1,7 +1,7 @@
 #include <Ignis/Ignis.h>
 #include <Ignis/Renderer/Renderer.h>
 
-#include "Minimal/Application.h"
+#include <minimal/application.h>
 
 #include "iso.h"
 
@@ -129,17 +129,17 @@ void OnDestroy(MinimalApp* app)
 int OnEvent(MinimalApp* app, const MinimalEvent* e)
 {
     float w, h;
-    if (MinimalEventWindowSize(e, &w, &h))
+    if (minimalEventWindowSize(e, &w, &h))
     {
         SetViewport(w, h);
         glViewport(0, 0, (GLsizei)w, (GLsizei)h);
     }
 
-    switch (MinimalEventKeyPressed(e))
+    switch (minimalEventKeyPressed(e))
     {
-    case GLFW_KEY_ESCAPE:    MinimalClose(app); break;
-    case GLFW_KEY_F6:        MinimalToggleVsync(app); break;
-    case GLFW_KEY_F7:        MinimalToggleDebug(app); break;
+    case GLFW_KEY_ESCAPE:    minimalClose(app); break;
+    case GLFW_KEY_F6:        minimalToggleVsync(app); break;
+    case GLFW_KEY_F7:        minimalToggleDebug(app); break;
     case GLFW_KEY_F9:        show_info = !show_info; break;
     }
 
@@ -149,8 +149,8 @@ int OnEvent(MinimalApp* app, const MinimalEvent* e)
 void OnUpdate(MinimalApp* app, float deltatime)
 {
     vec2 velocity;
-    velocity.x = (-MinimalKeyDown(GLFW_KEY_A) + MinimalKeyDown(GLFW_KEY_D)) * player.speed;
-    velocity.y = (-MinimalKeyDown(GLFW_KEY_W) + MinimalKeyDown(GLFW_KEY_S)) * player.speed;
+    velocity.x = (-minimalKeyDown(GLFW_KEY_A) + minimalKeyDown(GLFW_KEY_D)) * player.speed;
+    velocity.y = (-minimalKeyDown(GLFW_KEY_W) + minimalKeyDown(GLFW_KEY_S)) * player.speed;
 
     velocity = vec2_normalize(isoToCartesian(velocity));
 
@@ -161,7 +161,7 @@ void OnUpdate(MinimalApp* app, float deltatime)
 
     // render debug info
     /* fps */
-    ignisFontRendererRenderTextFormat(8.0f, 8.0f, "FPS: %d", MinimalGetFps(app));
+    ignisFontRendererRenderTextFormat(8.0f, 8.0f, "FPS: %d", minimalGetFps(app));
 
     if (show_info)
     {
@@ -184,7 +184,7 @@ void OnUpdate(MinimalApp* app, float deltatime)
 
     renderPlayer(&map, &player);
 
-    highlightTile(&map, screenToWorld(&map, (vec2) { MinimalCursorX(), MinimalCursorY() }));
+    highlightTile(&map, screenToWorld(&map, (vec2) { minimalCursorX(), minimalCursorY() }));
 
     ignisPrimitives2DFlush();
 }
@@ -198,10 +198,10 @@ int main()
         .on_update = OnUpdate
     };
 
-    if (MinimalLoad(&app, "IgnisApp", 1200, 800, "4.4"))
-        MinimalRun(&app);
+    if (minimalLoad(&app, "IgnisApp", 1200, 800, "4.4"))
+        minimalRun(&app);
 
-    MinimalDestroy(&app);
+    minimalDestroy(&app);
 
     return 0;
 }
