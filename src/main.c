@@ -1,7 +1,7 @@
 #include <Ignis/Ignis.h>
+#include <Ignis/Renderer/Renderer.h>
 
 #include "Minimal/Application.h"
-#include "Graphics/Renderer.h"
 
 #include "iso.h"
 
@@ -46,7 +46,7 @@ typedef struct
 void renderPlayer(const IsoMap* map, const Player* player)
 {
     vec2 screen = worldToScreen(map, player->position);
-    Primitives2DFillCircle(screen.x, screen.y, 3, IGNIS_BLACK);
+    ignisPrimitives2DFillCircle(screen.x, screen.y, 3, IGNIS_BLACK);
 }
 
 static void SetViewport(float w, float h)
@@ -55,10 +55,10 @@ static void SetViewport(float w, float h)
     height = h;
     screen_projection = mat4_ortho(0.0f, w, h, 0.0f, -1.0f, 1.0f);
 
-    Renderer2DSetViewProjection(screen_projection.v);
-    Primitives2DSetViewProjection(screen_projection.v);
-    FontRendererSetProjection(screen_projection.v);
-    Batch2DSetViewProjection(screen_projection.v);
+    ignisRenderer2DSetViewProjection(screen_projection.v);
+    ignisPrimitives2DSetViewProjection(screen_projection.v);
+    ignisFontRendererSetProjection(screen_projection.v);
+    ignisBatch2DSetViewProjection(screen_projection.v);
 }
 
 IsoMap map;
@@ -88,15 +88,15 @@ int OnLoad(MinimalApp* app, uint32_t w, uint32_t h)
     ignisSetClearColor(IGNIS_DARK_GREY);
 
     /* renderer */
-    Primitives2DInit();
-    FontRendererInit();
-    Renderer2DInit();
-    Batch2DInit("res/shaders/batch.vert", "res/shaders/batch.frag");
+    ignisPrimitives2DInit();
+    ignisFontRendererInit();
+    ignisRenderer2DInit();
+    ignisBatch2DInit("res/shaders/batch.vert", "res/shaders/batch.frag");
 
     SetViewport((float)w, (float)h);
 
     ignisCreateFont(&font, "res/fonts/ProggyTiny.ttf", 24.0);
-    FontRendererBindFontColor(&font, IGNIS_WHITE);
+    ignisFontRendererBindFontColor(&font, IGNIS_WHITE);
 
     MINIMAL_INFO("[GLFW] Version:        %s", glfwGetVersionString());
     MINIMAL_INFO("[OpenGL] Version:      %s", ignisGetGLVersion());
@@ -107,7 +107,7 @@ int OnLoad(MinimalApp* app, uint32_t w, uint32_t h)
 
     ignisCreateTexture2D(&tile_texture_atlas, "res/tiles.png", 1, 4, 0, NULL);
 
-    isoMapInit(&map, grid, 10, 10, 50.0f);
+    isoMapInit(&map, grid, 10, 10, 50, 8.0f);
     isoMapSetOrigin(&map, (vec2) { width * 0.5f, 100.0f });
 
     player.position = (vec2){ 5 * map.tile_size, 5 * map.tile_size };
@@ -120,10 +120,10 @@ void OnDestroy(MinimalApp* app)
 {
     ignisDeleteFont(&font);
 
-    Batch2DDestroy();
-    FontRendererDestroy();
-    Primitives2DDestroy();
-    Renderer2DDestroy();
+    ignisBatch2DDestroy();
+    ignisFontRendererDestroy();
+    ignisPrimitives2DDestroy();
+    ignisRenderer2DDestroy();
 }
 
 int OnEvent(MinimalApp* app, const MinimalEvent* e)
@@ -161,32 +161,32 @@ void OnUpdate(MinimalApp* app, float deltatime)
 
     // render debug info
     /* fps */
-    FontRendererRenderTextFormat(8.0f, 8.0f, "FPS: %d", MinimalGetFps(app));
+    ignisFontRendererRenderTextFormat(8.0f, 8.0f, "FPS: %d", MinimalGetFps(app));
 
     if (show_info)
     {
         /* Settings */
-        FontRendererTextFieldBegin(width - 220.0f, 8.0f, 8.0f);
+        ignisFontRendererTextFieldBegin(width - 220.0f, 8.0f, 8.0f);
 
-        FontRendererTextFieldLine("F6: Toggle Vsync");
-        FontRendererTextFieldLine("F7: Toggle debug mode");
+        ignisFontRendererTextFieldLine("F6: Toggle Vsync");
+        ignisFontRendererTextFieldLine("F7: Toggle debug mode");
 
-        FontRendererTextFieldLine("F9: Toggle overlay");
+        ignisFontRendererTextFieldLine("F9: Toggle overlay");
     }
 
-    FontRendererFlush();
+    ignisFontRendererFlush();
 
     renderMap(&map, &tile_texture_atlas);
 
-    Batch2DFlush();
+    ignisBatch2DFlush();
 
-    Primitives2DFillCircle(map.origin.x, map.origin.y, 3, IGNIS_RED);
+    ignisPrimitives2DFillCircle(map.origin.x, map.origin.y, 3, IGNIS_RED);
 
     renderPlayer(&map, &player);
 
     highlightTile(&map, screenToWorld(&map, (vec2) { MinimalCursorX(), MinimalCursorY() }));
 
-    Primitives2DFlush();
+    ignisPrimitives2DFlush();
 }
 
 int main()

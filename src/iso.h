@@ -17,9 +17,10 @@ typedef struct
     uint32_t height;
 
     float tile_size;
+    float tile_offset;
 } IsoMap;
 
-void isoMapInit(IsoMap* map, uint32_t* grid, uint32_t width, uint32_t height, float tile_size);
+void isoMapInit(IsoMap* map, uint32_t* grid, uint32_t width, uint32_t height, float tile_size, float tile_offset);
 
 void isoMapSetOrigin(IsoMap* map, vec2 origin);
 

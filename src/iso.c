@@ -20,12 +20,13 @@ vec2 cartesianToIso(vec2 cartesian)
     return iso;
 }
 
-void isoMapInit(IsoMap* map, uint32_t* grid, uint32_t width, uint32_t height, float tile_size)
+void isoMapInit(IsoMap* map, uint32_t* grid, uint32_t width, uint32_t height, float tile_size, float tile_offset)
 {
     map->grid = grid;
     map->width = width;
     map->height = height;
     map->tile_size = tile_size;
+    map->tile_offset = tile_offset;
     map->origin = vec2_zero();
 }
 
@@ -66,10 +67,13 @@ void renderMap(const IsoMap* map, const IgnisTexture2D* texture_atlas)
         uint32_t row = i / map->width;
 
         vec2 pos = getTileScreenPos(map, col, row);
-        float width = (float)texture_atlas->width;
-        float height = (float)texture_atlas->height;
+        IgnisRect rect = {
+            pos.x, pos.y,
+            map->tile_size * 2.0f,
+            map->tile_size + map->tile_offset
+        };
         uint32_t frame = map->grid[i];
-        Batch2DRenderTextureFrame(texture_atlas, pos.x, pos.y, width, height, frame);
+        ignisBatch2DRenderTextureFrame(texture_atlas, rect, frame);
     }
 }
 
@@ -83,11 +87,11 @@ void highlightTile(const IsoMap* map, vec2 world)
 
     // hightlight isometric version / screen
     vec2 center = getTileScreenCenter(map, col, row);
-    Primitives2DRenderRhombus(center.x, center.y, 2 * map->tile_size, map->tile_size, IGNIS_WHITE);
-    Primitives2DFillCircle(center.x, center.y, 2, IGNIS_WHITE);
+    ignisPrimitives2DRenderRhombus(center.x, center.y, 2 * map->tile_size, map->tile_size, IGNIS_WHITE);
+    ignisPrimitives2DFillCircle(center.x, center.y, 2, IGNIS_WHITE);
 
     // hightlight cartesian version / world
     float tile_size = map->tile_size;
-    Primitives2DRenderRect(col * tile_size, row * tile_size, tile_size, tile_size, IGNIS_WHITE);
-    Primitives2DFillCircle(world.x, world.y, 3, IGNIS_BLUE);
+    ignisPrimitives2DRenderRect(col * tile_size, row * tile_size, tile_size, tile_size, IGNIS_WHITE);
+    ignisPrimitives2DFillCircle(world.x, world.y, 3, IGNIS_BLUE);
 }
